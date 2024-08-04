@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const { MongoClient } = require('mongodb');
+import { MongoClient } from 'mongodb';
 // eslint-disable-next-line import/no-extraneous-dependencies
-const dotenv = require('dotenv');
+import { config } from 'dotenv';
 
-dotenv.config();
+config();
 
 class DBClient {
   constructor() {
@@ -44,4 +44,4 @@ class DBClient {
 }
 
 const dbClient = new DBClient();
-module.exports = dbClient;
+export default dbClient;
