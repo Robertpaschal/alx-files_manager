@@ -1,7 +1,7 @@
-const crypto = require('crypto');
+const sha1 = require('sha1');
+const { ObjectId } = require('mongodb');
 const dbClient = require('../utils/db');
-
-const hashPassword = (password) => crypto.createHash('sha1').update(password).digest('hex');
+const redisClient = require('../utils/redis');
 
 const UsersController = {
   async postNew(req, res) {
@@ -21,7 +21,7 @@ const UsersController = {
         return res.status(400).json({ error: 'Already exist' });
       }
 
-      const hashedPassword = hashPassword(password);
+      const hashedPassword = sha1(password);
       const result = await dbClient.db.collection('users').insertOne({ email, password: hashedPassword });
 
       return res.status(201).json({
@@ -32,6 +32,25 @@ const UsersController = {
       console.error(error);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
+  },
+
+  async getMe(req, res) {
+    const token = req.headers['x-token'];
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await dbClient.usersCollection.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    return res.status(200).json({ id: user._id, email: user.email });
   },
 };
 
