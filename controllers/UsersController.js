@@ -1,46 +1,38 @@
 const crypto = require('crypto');
-const { MongoClient } = require('mongodb');
-const url = 'mongodb://localhost:27017'; // Adjust the MongoDB connection URL if needed
-const dbName = 'files_manager';
-const client = new MongoClient(url);
+const dbClient = require('../utils/db');
 
-async function postNew(req, res) {
-  const { email, password } = req.body;
+const hashPassword = (password) => crypto.createHash('sha1').update(password).digest('hex');
 
-  if (!email) {
-    return res.status(400).json({ error: 'Missing email' });
-  }
+const UsersController = {
+  async postNew(req, res) {
+    const { email, password } = req.body;
 
-  if (!password) {
-    return res.status(400).json({ error: 'Missing password' });
-  }
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const usersCollection = db.collection('users');
-
-    const existingUser = await usersCollection.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Already exist' });
+    if (!email) {
+      return res.status(400).json({ error: 'Missing email' });
     }
 
-    const hashedPassword = crypto.createHash('sha1').update(password).digest('hex');
+    if (!password) {
+      return res.status(400).json({ error: 'Missing password' });
+    }
 
-    const newUser = {
-      email,
-      password: hashedPassword,
-    };
+    try {
+      const userExists = await dbClient.db.collection('users').findOne({ email });
+      if (userExists) {
+        return res.status(400).json({ error: 'Already exist' });
+      }
 
-    const result = await usersCollection.insertOne(newUser);
+      const hashedPassword = hashPassword(password);
+      const result = await dbClient.db.collection('users').insertOne({ email, password: hashedPassword });
 
-    return res.status(201).json({ id: result.insertedId, email });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await client.close();
-  }
-}
+      return res.status(201).json({
+        id: result.insertedId,
+        email,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  },
+};
 
-module.exports = { postNew };
+module.exports = UsersController;
