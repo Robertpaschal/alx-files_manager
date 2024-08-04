@@ -1,5 +1,5 @@
 # Files manager
-This project is a summary of this back-end trimester: authentication, NodeJS, MongoDB, Redis, pagination and background processing.<br/>
+This project is a summary of the back-end trimester: authentication, NodeJS, MongoDB, Redis, pagination and background processing.<br/>
 
 The objective is to build a simple platform to upload and view files:<br/>
 
@@ -33,8 +33,8 @@ At the end of this project, I was able to explain to anyone, without the help of
 
 ## Tasks
 
-+ [0.] **Redis utils**<br/>
-`mandatory`
++ [x] **0. Redis utils**<br/>
+`mandatory`<br/>
 Inside the folder `utils`, create a file [redis.js](utils/redis.js) that contains the class `RedisClient`.<br/>
 
 `RedisClient` should have:<br/>
@@ -67,5 +67,60 @@ true
 null
 12
 null
+bob@dylan:~$
+```
+
++ [x] **1. MongoDB utils**<br/>
+`mandatory`<br/>
+Inside the folder `utils`, create a file `db.js` that contains the class `DBClient`.<br/>
+
+`DBClient` should have:<br/>
+
++ the constructor that creates a client to MongoDB:
++ host: from the environment variable `DB_HOST` or default: `localhost`
++ port: from the environment variable `DB_PORT` or default: `27017`
++ database: from the environment variable DB_DATABASE or default: `files_manager`
++ a function `isAlive` that returns `true` when the connection to MongoDB is a success otherwise, `false`
++ an asynchronous function `nbUsers` that returns the number of documents in the collection `users`
++ an asynchronous function `nbFiles` that returns the number of documents in the collection `files`<br/>
+After the class definition, create and export an instance of `DBClient` called `dbClient`.
+```sh
+bob@dylan:~$ cat main.js
+import dbClient from './utils/db';
+
+const waitConnection = () => {
+    return new Promise((resolve, reject) => {
+        let i = 0;
+        const repeatFct = async () => {
+            await setTimeout(() => {
+                i += 1;
+                if (i >= 10) {
+                    reject()
+                }
+                else if(!dbClient.isAlive()) {
+                    repeatFct()
+                }
+                else {
+                    resolve()
+                }
+            }, 1000);
+        };
+        repeatFct();
+    })
+};
+
+(async () => {
+    console.log(dbClient.isAlive());
+    await waitConnection();
+    console.log(dbClient.isAlive());
+    console.log(await dbClient.nbUsers());
+    console.log(await dbClient.nbFiles());
+})();
+
+bob@dylan:~$ npm run dev main.js
+false
+true
+4
+30
 bob@dylan:~$
 ```
