@@ -1,4 +1,4 @@
-#!/usr/bin env node
+#!/usr/bin/env node
 
 const { MongoClient } = require('mongodb');
 // eslint-disable-next-line import/no-extraneous-dependencies
