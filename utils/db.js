@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { MongoClient } from 'mongodb';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { config } from 'dotenv';
