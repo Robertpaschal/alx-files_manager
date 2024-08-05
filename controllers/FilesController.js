@@ -4,7 +4,7 @@ const path = require('path');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
-const FOLDER_PATH = process.env.FOLDER_PATH || 'tmp/files_manager';
+const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 
 if (!fs.existsSync(FOLDER_PATH)) {
   fs.mkdirSync(FOLDER_PATH, { recursive: true });
@@ -39,7 +39,7 @@ const FilesController = {
     }
 
     if (parentId) {
-      const parentFile = await dbClient.filescollection('files').findOne({ _id: parentId });
+      const parentFile = await dbClient.db.collection('files').findOne({ _id: parentId });
       if (!parentFile) {
         return res.status(400).json({ error: 'Parent not found' });
       }
@@ -59,7 +59,7 @@ const FilesController = {
     };
 
     if (type === 'folder') {
-      const result = await dbClient.filesCollection('files').insertOne(file);
+      const result = await dbClient.db.collection('files').insertOne(file);
       return res.status(201).json(result.ops[0]);
     }
     const fileId = uuidv4();
@@ -68,7 +68,7 @@ const FilesController = {
     fs.writeFileSync(filePath, Buffer.from(data, 'base64'));
 
     file.localPath = filePath;
-    const result = await dbClient.filesCollection('files').insertOne(file);
+    const result = await dbClient.db.collection('files').insertOne(file);
     return res.status(201).json(result.ops[0]);
   },
 };
