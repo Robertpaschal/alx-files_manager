@@ -1,6 +1,8 @@
+/* eslint-disable max-len */
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const { ObjectId } = require('mongodb');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
@@ -38,8 +40,9 @@ const FilesController = {
       return res.status(400).json({ error: 'Missing data' });
     }
 
+    const parentObjectId = parentId === 0 ? 0 : new ObjectId(parentId);
     if (parentId) {
-      const parentFile = await dbClient.db.collection('files').findOne({ _id: parentId });
+      const parentFile = await dbClient.db.collection('files').findOne({ _id: parentObjectId });
       if (!parentFile) {
         return res.status(400).json({ error: 'Parent not found' });
       }
@@ -50,11 +53,11 @@ const FilesController = {
     }
 
     const file = {
-      userId,
+      userId: new ObjectId(userId),
       name,
       type,
       isPublic,
-      parentId: parentId || 0,
+      parentId: parentObjectId,
       localPath: '',
     };
 
@@ -84,7 +87,7 @@ const FilesController = {
     }
 
     const fileId = req.params.id;
-    const file = await dbClient.db.collection('files').findOne({ _id: fileId, userId });
+    const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId), userId: new ObjectId(userId) });
 
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
@@ -110,7 +113,7 @@ const FilesController = {
     const skip = page * pageSize;
 
     const files = await dbClient.db.collection('files').aggregate([
-      { $match: { userId, parentId } },
+      { $match: { userId: new ObjectId(userId), parentId: parentId === 0 ? 0 : new ObjectId(parentId) } },
       { $skip: skip },
       { $limit: pageSize },
     ]).toArray();
