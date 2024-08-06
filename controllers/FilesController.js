@@ -112,13 +112,22 @@ const FilesController = {
     const pageSize = 20;
     const skip = page * pageSize;
 
-    const files = await dbClient.db.collection('files').aggregate([
-      { $match: { userId: new ObjectId(userId), parentId: parentId === 0 ? 0 : new ObjectId(parentId) } },
-      { $skip: skip },
-      { $limit: pageSize },
-    ]).toArray();
+    const query = {
+      userId: new ObjectId(userId),
+      parentId: parentId === 0 ? 0 : new ObjectId(parentId),
+    };
 
-    return res.status(200).json(files);
+    try {
+      const files = await dbClient.db.collection('files').aggregate([
+        { $match: query },
+        { $skip: skip },
+        { $limit: pageSize },
+      ]).toArray();
+
+      return res.status(200).json(files);
+    } catch (error) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   },
 };
 
