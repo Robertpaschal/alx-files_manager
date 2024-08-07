@@ -1,3 +1,4 @@
+/* eslint-disable jest/lowercase-name */
 /* eslint-disable jest/valid-expect */
 /* eslint-disable no-undef */
 const chai = require('chai');
@@ -9,19 +10,20 @@ const redisClient = require('../utils/redis');
 chai.use(chaiHttp);
 const { expect } = chai;
 
-describe('aPI Endpoints', () => {
+describe('API Endpoints', () => {
   before(async () => {
     await dbClient.connect();
-    await redisClient.set('test_token', 'test_user_id'); // Setting a token for tests
+    // Set up a token for testing purposes
+    await redisClient.set('8a4772c5-8563-4622-964e-08c1edeb247b', '66af6a0fa693a25a0a1d0090');
   });
 
   after(async () => {
     // Clean up after tests
-    await redisClient.del('test_token');
+    await redisClient.del('8a4772c5-8563-4622-964e-08c1edeb247b');
     await dbClient.client.close();
   });
 
-  describe('gET /status', () => {
+  describe('GET /status', () => {
     it('should return status 200 and OK message', () => new Promise((done) => {
       chai.request(server)
         .get('/status')
@@ -33,7 +35,7 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /stats', () => {
+  describe('GET /stats', () => {
     it('should return status 200 and stats object', () => new Promise((done) => {
       chai.request(server)
         .get('/stats')
@@ -46,7 +48,7 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('pOST /users', () => {
+  describe('POST /users', () => {
     it('should create a new user', () => new Promise((done) => {
       chai.request(server)
         .post('/users')
@@ -60,11 +62,11 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /connect', () => {
+  describe('GET /connect', () => {
     it('should return a token', () => new Promise((done) => {
       chai.request(server)
         .get('/connect')
-        .auth('test@example.com', 'password123') // Use the same credentials used in the POST /users test
+        .auth('test@example.com', 'password123') // Use the credentials from the POST /users test
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('token');
@@ -73,11 +75,11 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /disconnect', () => {
+  describe('GET /disconnect', () => {
     it('should disconnect the user', () => new Promise((done) => {
       chai.request(server)
         .get('/disconnect')
-        .set('X-Token', 'test_token') // Use the set token
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(204);
           done();
@@ -85,38 +87,46 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /users/me', () => {
+  describe('GET /users/me', () => {
     it('should return user information', () => new Promise((done) => {
       chai.request(server)
         .get('/users/me')
-        .set('X-Token', 'test_token')
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b')
         .end((err, res) => {
           expect(res).to.have.status(200);
-          expect(res.body).to.have.property('id', 'test_user_id'); // Change according to your user model
+          expect(res.body).to.have.property('id', '66af6a0fa693a25a0a1d0090'); // Use the user ID set up in before
           expect(res.body).to.have.property('email');
           done();
         });
     }));
   });
 
-  describe('pOST /files', () => {
+  describe('POST /files', () => {
     it('should upload a new file', () => new Promise((done) => {
       chai.request(server)
         .post('/files')
-        .attach('file', 'path/to/your/test/file.png') // Change to the path of your test file
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
+        .send({
+          name: 'myText.txt',
+          type: 'file',
+          data: 'SGVsbG8gV2Vic3RhY2shCg==',
+        })
         .end((err, res) => {
           expect(res).to.have.status(201);
-          expect(res.body).to.have.property('id');
+          expect(res.body).to.have.property('name', 'myText.txt');
+          expect(res.body).to.have.property('type', 'file');
+          expect(res.body).to.have.property('localPath');
           done();
         });
     }));
   });
 
-  describe('gET /files/:id', () => {
+  describe('GET /files/:id', () => {
     it('should retrieve the file by ID', () => new Promise((done) => {
-      const fileId = 'your_file_id'; // Change to a valid file ID from your database
+      const fileId = '66b3e58ba0b67987f0869c74'; // Use a valid file ID from your database
       chai.request(server)
         .get(`/files/${fileId}`)
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('id', fileId);
@@ -125,11 +135,12 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /files', () => {
+  describe('GET /files', () => {
     it('should return paginated files', () => new Promise((done) => {
       chai.request(server)
         .get('/files')
-        .query({ page: 1, limit: 10 }) // Change according to your pagination
+        .query({ page: 1, limit: 20 }) // Change according to your pagination
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('files');
@@ -139,11 +150,12 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('pUT /files/:id/publish', () => {
+  describe('PUT /files/:id/publish', () => {
     it('should publish the file', () => new Promise((done) => {
-      const fileId = 'your_file_id'; // Change to a valid file ID
+      const fileId = '66b3e58ba0b67987f0869c74'; // Use a valid file ID
       chai.request(server)
         .put(`/files/${fileId}/publish`)
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('status', 'published');
@@ -152,11 +164,12 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('pUT /files/:id/unpublish', () => {
+  describe('PUT /files/:id/unpublish', () => {
     it('should unpublish the file', () => new Promise((done) => {
-      const fileId = 'your_file_id'; // Change to a valid file ID
+      const fileId = '66b3e58ba0b67987f0869c74'; // Use a valid file ID
       chai.request(server)
         .put(`/files/${fileId}/unpublish`)
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('status', 'unpublished');
@@ -165,11 +178,12 @@ describe('aPI Endpoints', () => {
     }));
   });
 
-  describe('gET /files/:id/data', () => {
+  describe('GET /files/:id/data', () => {
     it('should retrieve the file data', () => new Promise((done) => {
-      const fileId = 'your_file_id'; // Change to a valid file ID
+      const fileId = '66b3e58ba0b67987f0869c74'; // Use a valid file ID
       chai.request(server)
         .get(`/files/${fileId}/data`)
+        .set('X-Token', '8a4772c5-8563-4622-964e-08c1edeb247b') // Use the token set up in before
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.property('data');
