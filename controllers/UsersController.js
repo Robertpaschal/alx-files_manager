@@ -2,6 +2,7 @@ const sha1 = require('sha1');
 const { ObjectId } = require('mongodb');
 const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
+const { userQueue } = require('../queues/fileQueue');
 
 const UsersController = {
   async postNew(req, res) {
@@ -23,6 +24,8 @@ const UsersController = {
 
       const hashedPassword = sha1(password);
       const result = await dbClient.db.collection('users').insertOne({ email, password: hashedPassword });
+
+      await userQueue.add({ userId: result.insertedId });
 
       return res.status(201).json({
         id: result.insertedId,

@@ -1,9 +1,11 @@
+/* eslint-disable consistent-return */
 /* eslint-disable no-await-in-loop */
 const { ObjectId } = require('mongodb');
 const imageThumbnail = require('image-thumbnail');
 const fs = require('fs').promises;
 const dbClient = require('./utils/db');
 const fileQueue = require('./queues/fileQueue');
+const { userQueue } = require('./queues/fileQueue');
 
 fileQueue.process(async (job) => {
   const { fileId, userId } = job.data;
@@ -30,4 +32,25 @@ fileQueue.process(async (job) => {
 
 fileQueue.on('error', (error) => {
   console.error('File queue error:', error);
+});
+
+userQueue.process(async (job, done) => {
+  const { userId } = job.data;
+
+  if (!userId) {
+    return done(new Error('Missing userId'));
+  }
+
+  try {
+    const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return done(new Error('User not found'));
+    }
+
+    console.log(`Welcome ${user.email}!`);
+    done();
+  } catch (error) {
+    done(error);
+  }
 });
