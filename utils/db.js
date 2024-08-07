@@ -1,3 +1,4 @@
+#!/usr/bin/node
 const { MongoClient } = require('mongodb');
 
 class DBClient {
@@ -10,7 +11,7 @@ class DBClient {
     this.client = new MongoClient(uri, { useUnifiedTopology: true });
     this.client.connect().then(() => {
       this.db = this.client.db(database);
-      // console.log('Connected to MongoDB');
+      //  console.log('Connected to MongoDB')
     }).catch((err) => {
       console.error('MongoDB connection error:', err);
     });

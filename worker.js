@@ -4,8 +4,7 @@ const { ObjectId } = require('mongodb');
 const imageThumbnail = require('image-thumbnail');
 const fs = require('fs').promises;
 const dbClient = require('./utils/db');
-const fileQueue = require('./queues/fileQueue');
-const { userQueue } = require('./queues/fileQueue');
+const { fileQueue, userQueue } = require('./queues/fileQueue');
 
 fileQueue.process(async (job) => {
   const { fileId, userId } = job.data;
@@ -53,4 +52,8 @@ userQueue.process(async (job, done) => {
   } catch (error) {
     done(error);
   }
+});
+
+userQueue.on('error', (error) => {
+  console.error('User queue error:', error);
 });

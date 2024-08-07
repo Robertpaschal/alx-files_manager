@@ -7,7 +7,7 @@ const { ObjectId } = require('mongodb');
 const mime = require('mime-types');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
-const fileQueue = require('../queues/fileQueue');
+const { fileQueue } = require('../queues/fileQueue');
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 
